@@ -1,0 +1,555 @@
+<!doctype html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="ui.core.js"></script>
+	<script type="text/javascript" src="ui.draggable.js"></script>
+    <script type="text/javascript" src="ui.resizable.js"></script>
+	<title>相片圈人demo</title>
+	<style type="text/css">
+	h1{ text-align:center;
+		}
+	/**最外层**/
+	.lab{
+		background:#fff;
+		border:1px #999999 solid;
+		height:auto;
+		width:200px;
+		color:#333;
+		font-size:12px;
+		/**display:none;**/
+		text-align:center;
+		position:absolute;
+		left:106px;
+		top:0px;
+		filter:alpha(opacity=90);
+		opacity:0.9;
+		-moz-opacity: 0.9;
+		}
+	.imgContainer{
+		width:1375px;
+		height:681px;
+		margin:0px auto;		
+		position:relative;	
+		background:url(45.jpg);
+	}
+	/**自己的图牿*/
+	.photo-marker{
+		width:100px;
+		height:100px;		
+		position:absolute;
+		z-index:999	;
+		display:none;
+	}
+
+/**设置边角方形样式**/
+.photo-marker .ui-resizable-handle{
+    width:8px;
+    height:8px;
+    background:url(marker-square.gif) no-repeat left top;
+    cursor:pointer;
+}
+
+/**设置4个边线的位置**/
+.photo-marker .b{
+    bottom:0;
+}
+.photo-marker .t,{
+    top:0;
+}
+.photo-marker .l{
+    left:0;
+}
+.photo-marker .r{
+    right:0;
+}
+/**设置边线为浮势*/
+.photo-marker span,.photo-marker .ui-resizable-handle{
+    position:absolute;
+    line-height:0;   
+}
+/**设置边线的背景图片样弿*/
+
+.photo-marker .t,.photo-marker .b{
+    height:2px;
+    width:100%;
+    left:0;
+    background:url(marker-shine.gif) repeat-x left top;
+}
+.photo-marker .l,.photo-marker .r{
+    width:2px;
+    height:100%;
+    top:0;
+    background:url(marker-shine.gif) repeat-y left top;
+}
+
+/**设置8个边角位罿*/
+.photo-marker .ui-resizable-n {
+    cursor: n-resize;
+    top: -3px;
+    left: 50%;
+    margin-left:-3px;
+}
+.photo-marker .ui-resizable-e {
+    cursor: e-resize;
+    top: 50%;
+    margin-top:-3px;
+    right: -3px;
+}
+.photo-marker .ui-resizable-s{
+    cursor: n-resize;
+    left: 50%;
+    margin-left:-3px;
+    bottom: -3px;
+}
+.photo-marker .ui-resizable-w{
+    cursor: e-resize;
+    top: 50%;
+     margin-top:-3px;
+    left: -3px;
+}
+.photo-marker .ui-resizable-ne{
+    cursor:sw-resize;
+    right:-3px;
+    top:-3px;
+}
+.photo-marker .ui-resizable-nw{
+    cursor:nw-resize;
+    left:-2px;
+    top:-2px;
+}
+.photo-marker .ui-resizable-sw{
+    cursor:sw-resize;
+    left:-3px;
+    bottom:-3px;
+}
+
+.photo-marker .ui-resizable-se{
+    cursor:se-resize;
+    right:-3px;
+    bottom:-3px;
+}	
+	.left,.top,.width,.height{
+		width:50px;
+		height:30px;
+		border:1px solid red;
+	}
+/**圈人左下角图牿*/
+.divHtml{
+	width:auto;
+	position:absolute;
+	background:#fff;
+	font-size:12px;
+	filter:alpha(opacity=80);
+	opacity:0.8;
+	-moz-opacity: 0.8;
+	padding:2px;
+}
+/**删除标记**/
+#imgSide {	
+	 width:auto; 
+	 padding:0 10px; 
+	 border-top:1px solid #ddd; 	
+}
+	
+#imgSide span{
+	color:#ff0000;
+	font-size:12px;
+	cursor:pointer;
+}
+#imgSide li{
+	float:left;
+	list-style:none;
+	height:14px;
+	padding-right:4px;
+}	
+	</style>
+	<script type="text/javascript">
+$(function(){
+		var list = [];
+	//开始闭包执行程庿
+	(function($) {
+		 var $this=this;
+		 $(document).ready(function(){  
+     LoadData(); 
+}); 
+		$(".show").click(function(){
+				$(".photo-marker").css({
+						display:"block"
+					});
+				});
+	$(".lab").children("button")
+		.each(function(k){
+			var _tmp;
+			if(k==0){
+				$(this).click(function(){
+					var po = getPosition();
+					list[list.length] = {
+						fleft:po.nw[0],
+						ftop:po.nw[1],
+						lwidth:po.se[0],
+						lheight:po.se[1],
+						va:$(".lab").children("input").val()
+					}
+					SendData(po,$(".lab").children("input").val());
+					$("<div>").css({
+						left:po.nw[0],
+					    top:po.nw[1],
+						width:po.se[0] ,
+					    height:po.se[1],						
+						position:"absolute"
+					})//                           ----  css!!!!!!!!
+					.attr("id","div"+(list.length))//添加id属怿
+					.mouseover(function(event){
+						//鼠标悬浮事件
+						var o = event.target.id;						
+						o = o.substring(3);						
+						_tmp =  list[parseInt(o)-1];
+						
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"1px solid blue",	
+						})//                    
+						.html($("<div>").addClass("divHtml")
+						.css({
+							top:_tmp.lheight+2							
+						}).html(_tmp.va)						
+						);//                           ---- mouserover!!!!!
+						
+					})//                             ---- mouseover!!!!
+					.mouseout(function(event){
+						//鼠标移开事件
+						var o = event.target.id;						
+						o = o.substring(3);
+						_tmp =  list[parseInt(o)-1];					
+						
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"0px solid blue",
+						}).children("div").remove();
+					})//                              ------mouseout!!!!!!!!
+					
+					.appendTo($(".imgContainer"));	//将div添加最外层div				
+
+
+	
+				//将圈人标签添加到圈人列表釿
+$("#imgSide > ul").append("<li id=\"li"+(list.length)+"\">"+$(".lab").children("input").val()+"<span id=\""+(list.length)+"\">x</span></li>");
+					
+					
+					//圈人列表里的li添加事件
+					$("#imgSide li[id='li"+(list.length)+"']")
+					.mouseover(function(event){
+						var o = event.target.id;						
+						o = o.substring(2);
+						_tmp =  list[parseInt(o)-1];
+						if(_tmp==null)return;
+						//鼠标悬浮事件
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"1px solid blue",	
+						})//                                  ---mouseover!!!!!
+						.html($("<div>").addClass("divHtml")
+						.css({
+							top : _tmp.lheight+2							
+						}).html(_tmp.va)
+						
+						);//                                 ----#div!!!!!!
+						
+					})//                                   ----#imgSide!!!!!
+					.mouseout(function(event){
+						//鼠标移开事件
+						var o = event.target.id;						
+						o = o.substring(2);						
+						if(o==null)return;
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"0px solid blue",
+						}).children("div").remove();
+					});//                                    ----mouseout!!!!
+					//删除标记
+					$("#"+list.length).click(function(event){
+							var o = event.target.id;
+							$(".imgContainer #div"+o+"").remove("#div"+o+"");		
+							$("#imgSide > ul > li[id='li"+o+"']").remove("li[id='li"+o+"'");
+					
+					});	//
+					(function(){
+						$(".photo-marker").css({
+							display:"none"
+						})
+					})();
+				});	
+			}
+			else{
+				
+				$(this).click(function(){
+					(function(){
+                                                $(".photo-marker").css({
+                                                        display:"none"
+                                                })
+                                        })();
+				});
+			}
+		});
+
+
+
+function createObj()
+{
+  var o=null;
+  if(typeof(XMLHttpRequest)!="undefined") return new XMLHttpRequest();  
+  if(window.ActiveXObject){
+    var MSXML=["MSXML2.XMLHttp.5.0","MSXML2.XMLHttp.4.0","MSXML2.XMLHttp.3.0","MSXML2.XMLHttp","Microsoft.XMLHTTP"];
+    for(var i=0;i<MSXML.length;i++){
+       try{
+         o= new ActiveXObject(MSXML[i]);return o;
+       }
+       catch(e){}
+    }
+  }
+  return null;
+}
+
+function SendData(v,t){
+ var o=createObj();//创建ajax对象
+ url="answer.php?left="+v.nw[0]+"&top="+v.nw[1]+"&width="+v.se[0]+"&hight="+v.se[1]+"&val="+t;//注意你的
+o.open("post",url,true);
+ o.onreadystatechange=function(){
+   if(o.readyState==4){
+     if(o.status==200)$("taAnswer").value=o.responseText;
+     else alert("发生错误！\n\n"+o.responseText);
+   }
+ }
+
+ o.send(null);//发送请汿
+}
+
+function LoadData(){  
+    $.ajax({ 
+        type: 'get', 
+	async:false,
+        url: 'pages.php', 
+	data:"",
+        dataType:'json', 
+        success:ShowData, 
+        complete:function(){ //生成分页条 
+ 
+        }, 
+        error:function(){ 
+            alert("数据加载失败"); 
+        } 
+    }); 
+} 
+
+
+function ShowData(json){
+
+	    var _tmp;
+            var p_list = json.list; 
+            $.each(p_list,function(index,array){ //遍历json数据列 
+					po={
+					nw:[parseInt(array['left']),parseInt(array['top'])],
+					se:[
+						parseInt(array['width']),
+						parseInt(array['hight'])
+						]
+					}
+					p_name=array['val'];
+					list[list.length] = {
+						fleft:po.nw[0],
+						ftop:po.nw[1],
+						lwidth:po.se[0],
+						lheight:po.se[1],
+						va:p_name
+					}
+					$("<div>").css({
+						left:po.nw[0],
+					    top:po.nw[1],
+						width:po.se[0] ,
+					    height:po.se[1],
+					  //  height:100,						
+						position:"absolute"
+					})//                           ----  css!!!!!!!!
+					.attr("id","div"+(list.length))//添加id属怿
+					.mouseover(function(event){
+						//鼠标悬浮事件
+						var o = event.target.id;						
+						o = o.substring(3);						
+						_tmp =  list[parseInt(o)-1];
+						
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"1px solid blue",	
+						})//                    
+						.html($("<div>").addClass("divHtml")
+						.css({
+							top:_tmp.lheight+2							
+						}).html(_tmp.va)						
+						);//                           ---- mouserover!!!!!
+						
+					})//                             ---- mouseover!!!!
+					.mouseout(function(event){
+						//鼠标移开事件
+						var o = event.target.id;						
+						o = o.substring(3);
+						_tmp =  list[parseInt(o)-1];					
+						
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"0px solid blue",
+						}).children("div").remove();
+					})//                              ------mouseout!!!!!!!!
+					
+					.appendTo($(".imgContainer"));	//将div添加最外层div				
+
+
+	
+				//将圈人标签添加到圈人列表釿
+$("#imgSide > ul").append("<li id=\"li"+(list.length)+"\">"+p_name+"<span id=\""+(list.length)+"\">x</span></li>");
+					
+					
+					//圈人列表里的li添加事件
+					$("#imgSide li[id='li"+(list.length)+"']")
+					.mouseover(function(event){
+						var o = event.target.id;						
+						o = o.substring(2);
+						_tmp =  list[parseInt(o)-1];
+						if(_tmp==null)return;
+						//鼠标悬浮事件
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"1px solid blue",	
+						})//                                  ---mouseover!!!!!
+						.html($("<div>").addClass("divHtml")
+						.css({
+							top : _tmp.lheight+2							
+						}).html(_tmp.va)
+						
+						);//                                 ----#div!!!!!!
+						
+					})//                                   ----#imgSide!!!!!
+					.mouseout(function(event){
+						//鼠标移开事件
+						var o = event.target.id;						
+						o = o.substring(2);						
+						if(o==null)return;
+						$("#div"+(parseInt(o)))
+						.css({
+							border:"0px solid blue",
+						}).children("div").remove();
+					});//                                    ----mouseout!!!!
+					//删除标记
+					$("#"+list.length).click(function(event){
+							var o = event.target.id;
+							$(".imgContainer #div"+o+"").remove("#div"+o+"");		
+							$("#imgSide > ul > li[id='li"+o+"']").remove("li[id='li"+o+"'");
+					
+					});	//
+            }); 
+
+
+
+
+}
+
+
+
+
+
+		function getPosition(){
+			
+          return{
+          nw:[$(".photo-marker").position().left,$(".photo-marker").position().top],
+           se:[
+		   		$(".photo-marker").width(),
+				$(".photo-marker").height()
+			  ]
+            }
+        }
+		
+		function setPosition(){
+			var po = getPosition();
+			$(".lab").css({
+				top : 0,
+				left :po.se[0]+6		
+			}); 
+		}
+		$(".photo-marker").draggable({
+			containment: 'parent', 
+			start: function() {
+				
+			},
+			drag: function() {
+				$(".left").html($(this).position().left);	
+				$(".top").html($(this).position().top);	
+				$(".width").html($(this).width());	
+				$(".height").html($(this).height());
+				setPosition();
+				$(".lab").slideUp("fast");
+			},
+			stop: function() {
+				setPosition();
+				$(".lab").slideDown("fast");
+			}	
+		});
+
+
+
+
+
+		$(".photo-marker").resizable({
+			handles:"all",
+			containment: 'parent',
+			minHeight:10,
+            minWidth:10,
+			start: function(event, ui) {
+				
+			},
+			resize: function(event, ui) {
+				
+				setPosition();
+				$(".lab").slideUp("fast");
+			},
+			stop: function(event, ui) {
+				setPosition();
+				$(".lab").slideDown("fast");
+			}		
+		});
+			})(jQuery);
+	});
+
+	</script>
+</head>
+<body>
+<h1>相片圈人demo</h1>
+<input type="button" value="圈人" class="show"/>
+<div class="imgContainer">
+    <div class="photo-marker">
+        <span class="t"></span>
+        <span class="r"></span>
+        <span class="b"></span>
+        <span class="l"></span>  
+        <div class="lab">
+                标注<input /><br/>
+                <button type="button">确定</button><button type="button" >取消</button>
+        </div>
+        </div> 
+	</div>
+</div>
+
+<div style="clear:both; padding:15px;height:15px;" />   
+    <div id="imgSide"><ul></ul></div>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+
+
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_5846299'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s5.cnzz.com/stat.php%3Fid%3D5846299%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
+
+</body>
+</html>
